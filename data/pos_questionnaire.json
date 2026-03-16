@@ -1,0 +1,433 @@
+{
+  "environment": "POS",
+  "questions": [
+    {
+      "id": 10,
+      "environment": "POS",
+      "section": "POS Environment",
+      "question": "What type of POS system do you use?",
+      "type": "single_choice",
+      "options": [
+        {"value": "standalone", "label": "Standalone payment terminal"},
+        {"value": "integrated", "label": "Integrated POS system"},
+        {"value": "mobile", "label": "Mobile POS (tablet or smartphone)"},
+        {"value": "self_checkout", "label": "Self-checkout kiosk"},
+        {"value": "mixed", "label": "Mixed environment"}
+      ]
+    },
+    {
+      "id": 11,
+      "environment": "POS",
+      "section": "POS Environment",
+      "question": "How many POS terminals are deployed?",
+      "type": "single_choice",
+      "options": [
+        {"value": "1", "label": "1–5"},
+        {"value": "2_10", "label": "6–20"},
+        {"value": "11_plus", "label": "21–100 or more"}
+      ]
+    },
+    {
+      "id": 12,
+      "environment": "POS",
+      "section": "POS Environment",
+      "question": "Who provides the POS terminals?",
+      "type": "single_choice",
+      "options": [
+        {"value": "processor", "label": "Payment processor"},
+        {"value": "vendor", "label": "POS vendor"},
+        {"value": "merchant", "label": "Purchased by merchant"},
+        {"value": "leased", "label": "Leased equipment"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 13,
+      "environment": "POS",
+      "section": "POS Environment",
+      "question": "Do POS terminals run a general-purpose operating system?",
+      "type": "single_choice",
+      "options": [
+        {"value": "no", "label": "No"},
+        {"value": "windows", "label": "Yes – Windows"},
+        {"value": "linux", "label": "Yes – Linux"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 14,
+      "environment": "POS",
+      "section": "POS Environment",
+      "question": "Do you use unattended POS devices such as kiosks or vending systems?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"}
+      ]
+    },
+    {
+      "id": 15,
+      "environment": "POS",
+      "section": "Card Data Handling",
+      "question": "How are cards accepted at the POS?",
+      "type": "single_choice",
+      "options": [
+        {"value": "chip", "label": "Chip (EMV)"},
+        {"value": "tap", "label": "Tap (NFC / contactless)"},
+        {"value": "magstripe", "label": "Magstripe"},
+        {"value": "manual", "label": "Manual entry"},
+        {"value": "all", "label": "All of the above"}
+      ]
+    },
+    {
+      "id": 16,
+      "environment": "POS",
+      "section": "Card Data Handling",
+      "question": "Does your POS system store full card numbers (PAN)?",
+      "type": "single_choice",
+      "options": [
+        {"value": "no", "label": "No"},
+        {"value": "yes", "label": "Yes"},
+        {"value": "tokenized", "label": "Tokenized only"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 17,
+      "environment": "POS",
+      "section": "Card Data Handling",
+      "question": "Does your POS system store card data after authorization?",
+      "type": "single_choice",
+      "options": [
+        {"value": "no", "label": "No"},
+        {"value": "temporarily", "label": "Temporarily"},
+        {"value": "permanently", "label": "Yes permanently"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 18,
+      "environment": "POS",
+      "section": "Card Data Handling",
+      "question": "Are printed receipts configured to mask card numbers?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 19,
+      "environment": "POS",
+      "section": "Card Data Handling",
+      "question": "Can employees manually enter card numbers into the POS system?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"}
+      ]
+    },
+    {
+      "id": 20,
+      "environment": "POS",
+      "section": "Encryption and P2PE",
+      "question": "Do your terminals use a PCI-listed P2PE solution?",
+      "type": "single_choice",
+      "options": [
+        {"value": "p2pe_validated", "label": "Yes – PCI validated P2PE"},
+        {"value": "p2pe_encryption", "label": "Yes – encryption but not PCI validated"},
+        {"value": "no", "label": "No"},
+        {"value": "unsure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 21,
+      "environment": "POS",
+      "section": "Encryption and P2PE",
+      "question": "Is card data encrypted immediately at the terminal during card capture?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 22,
+      "environment": "POS",
+      "section": "Encryption and P2PE",
+      "question": "Is cardholder data decrypted within your environment?",
+      "type": "single_choice",
+      "options": [
+        {"value": "no", "label": "No"},
+        {"value": "yes", "label": "Yes"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 23,
+      "environment": "POS",
+      "section": "Encryption and P2PE",
+      "question": "Does your POS software perform payment processing directly?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "processor", "label": "No – handled by payment processor"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 24,
+      "environment": "POS",
+      "section": "Encryption and P2PE",
+      "question": "Is tokenization used for storing payment references?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 25,
+      "environment": "POS",
+      "section": "Network Architecture",
+      "question": "Are POS terminals connected to a dedicated payment network?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes_full", "label": "Yes – fully segmented network"},
+        {"value": "yes_partial", "label": "Partially segmented"},
+        {"value": "no_shared", "label": "No – shared network"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 26,
+      "environment": "POS",
+      "section": "Network Architecture",
+      "question": "Do POS terminals connect directly to the payment processor?",
+      "type": "single_choice",
+      "options": [
+        {"value": "internet_direct", "label": "Yes"},
+        {"value": "vpn", "label": "No – through POS server"},
+        {"value": "internet_gateway", "label": "No – through gateway"},
+        {"value": "internet_unsure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 27,
+      "environment": "POS",
+      "section": "Network Architecture",
+      "question": "Are firewalls used to protect the POS network?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 28,
+      "environment": "POS",
+      "section": "Network Architecture",
+      "question": "Are wireless networks used for POS connectivity?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"}
+      ]
+    },
+    {
+      "id": 29,
+      "environment": "POS",
+      "section": "Network Architecture",
+      "question": "If wireless is used, is it secured using WPA2/WPA3 encryption?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 30,
+      "environment": "POS",
+      "section": "Authentication and Access",
+      "question": "Do employees log into POS systems using unique user IDs?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 31,
+      "environment": "POS",
+      "section": "Authentication and Access",
+      "question": "Are default passwords changed on POS devices?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 32,
+      "environment": "POS",
+      "section": "Authentication and Access",
+      "question": "Are administrative accounts restricted to authorized personnel only?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 33,
+      "environment": "POS",
+      "section": "Authentication and Access",
+      "question": "Is multi-factor authentication used for POS administration access?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 34,
+      "environment": "POS",
+      "section": "Authentication and Access",
+      "question": "Are inactive POS user accounts disabled or removed regularly?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 35,
+      "environment": "POS",
+      "section": "Logging and Monitoring",
+      "question": "Are POS system activities logged and monitored?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 36,
+      "environment": "POS",
+      "section": "Logging and Monitoring",
+      "question": "Are security logs reviewed regularly?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 37,
+      "environment": "POS",
+      "section": "Logging and Monitoring",
+      "question": "Do POS devices receive regular software or firmware updates?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 38,
+      "environment": "POS",
+      "section": "Logging and Monitoring",
+      "question": "Are antivirus or endpoint protection tools installed on POS systems (if applicable)?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "na", "label": "Not applicable"}
+      ]
+    },
+    {
+      "id": 39,
+      "environment": "POS",
+      "section": "Logging and Monitoring",
+      "question": "Are vulnerability scans performed on POS systems or networks?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 40,
+      "environment": "POS",
+      "section": "Vendor and Remote Access",
+      "question": "Does your POS vendor remotely access systems for support?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"}
+      ]
+    },
+    {
+      "id": 41,
+      "environment": "POS",
+      "section": "Vendor and Remote Access",
+      "question": "Is vendor remote access restricted and monitored?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 42,
+      "environment": "POS",
+      "section": "Vendor and Remote Access",
+      "question": "Are vendor access credentials rotated regularly?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 43,
+      "environment": "POS",
+      "section": "Vendor and Remote Access",
+      "question": "Is vendor access disabled when not actively needed?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    },
+    {
+      "id": 44,
+      "environment": "POS",
+      "section": "Vendor and Remote Access",
+      "question": "Is your POS vendor listed as PCI DSS compliant by the PCI Security Standards Council?",
+      "type": "single_choice",
+      "options": [
+        {"value": "yes", "label": "Yes"},
+        {"value": "no", "label": "No"},
+        {"value": "not_sure", "label": "Not sure"}
+      ]
+    }
+  ]
+}

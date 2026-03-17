@@ -56,9 +56,9 @@ def upgrade() -> None:
     op.create_index("ix_rule_sets_framework_env", "rule_sets", ["framework", "environment_type"])
     op.execute("""
         INSERT INTO rule_sets (framework, environment_type, version, is_active)
-        VALUES ('pci_dss', 'ecommerce', 1, 1),
-               ('pci_dss', 'pos', 1, 1),
-               ('pci_dss', 'payment_platform', 1, 1)
+        VALUES ('pci_dss', 'ecommerce', 1, TRUE),
+               ('pci_dss', 'pos', 1, TRUE),
+               ('pci_dss', 'payment_platform', 1, TRUE)
     """)
 
     # 4. Update assessments (batch for SQLite)

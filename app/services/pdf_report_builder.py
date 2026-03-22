@@ -128,13 +128,19 @@ def _header_footer_canvas(canvas, doc) -> None:
     canvas.line(0.75 * inch, 0.62 * inch, page_width - 0.75 * inch, 0.62 * inch)
     canvas.setFont("Helvetica", 7)
     canvas.setFillColor(HexColor(SLATE_MUTED))
+    year = datetime.utcnow().year
+    canvas.drawString(
+        0.75 * inch,
+        0.48 * inch,
+        f"© {year} Dama AI LLC. All rights reserved.",
+    )
     canvas.drawCentredString(
         page_width / 2,
-        0.42 * inch,
-        "ComplianceAstra · Guidance only — not a certification or audit",
+        0.35 * inch,
+        "Guidance only — not a certification or audit",
     )
     num = canvas.getPageNumber()
-    canvas.drawRightString(page_width - 0.75 * inch, 0.42 * inch, f"Page {num}")
+    canvas.drawRightString(page_width - 0.75 * inch, 0.48 * inch, f"Page {num}")
     canvas.restoreState()
 
 
@@ -653,7 +659,7 @@ def build_pci_readiness_pdf(
                         "<b>Disclaimer</b><br/><br/>"
                         "This report provides guidance and readiness insights only. It does not constitute a compliance certification or audit. "
                         "Final compliance validation depends on your acquiring bank, payment processor, or qualified security assessor (QSA) where applicable. "
-                        "ComplianceAstra LLC is not responsible for decisions made based on this report.",
+                        "Dama AI LLC is not responsible for decisions made based on this report.",
                         ParagraphStyle(
                             name="Disc",
                             fontSize=8.5,

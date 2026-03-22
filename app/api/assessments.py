@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.models.report import Report
 from app.core.auth import get_current_user, get_current_user_required
 from app.models.user import User
-from app.models.assessment import Assessment, AssessmentAnswer
+from app.models.assessment import Assessment, AssessmentAnswer, AssessmentStatus
 from app.models.question import Question, QuestionOption
 from app.schemas.assessment import (
     AssessmentCreate,
@@ -17,9 +17,65 @@ from app.schemas.assessment import (
     ScopeResult,
 )
 from app.schemas.claim import AssessmentClaimRequest, AssessmentClaimResponse
+from app.schemas.saq_assessment import SaqAssessmentSync, SaqAssessmentSyncResponse
 from app.services.assessment_service import AssessmentService
 
 router = APIRouter()
+
+
+def _map_saq_env(environment_type: str) -> str:
+    """Map wizard env to DB assessment environment_type."""
+    m = {
+        "ecommerce": "ecommerce",
+        "pos": "pos",
+        "card_present": "pos",
+        "moto": "ecommerce",
+        "service_provider": "payment_platform",
+        "payment_platform": "payment_platform",
+    }
+    return m.get(environment_type, "ecommerce")
+
+
+# Registered BEFORE /{assessment_id} so "saq-sync" is not captured as an id (avoids POST -> 405).
+@router.post("/saq-sync", response_model=SaqAssessmentSyncResponse)
+async def sync_saq_assessment(
+    data: SaqAssessmentSync,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Create or update a guest assessment keyed by client_session_id (stored as anonymous_id).
+    Call before checkout so assessment_id exists for Stripe metadata.
+    """
+    client_key = data.client_session_id.strip()[:64]
+    env = _map_saq_env(data.environment_type.strip())
+
+    result = await db.execute(select(Assessment).where(Assessment.anonymous_id == client_key))
+    row = result.scalar_one_or_none()
+
+    if row:
+        row.environment_type = env
+        row.scope_result = data.scope_result
+        row.status = AssessmentStatus.COMPLETED.value
+        if data.guest_email:
+            row.guest_email = data.guest_email.strip().lower()[:255]
+        await db.flush()
+        await db.refresh(row)
+        return SaqAssessmentSyncResponse(assessment_id=row.id)
+
+    assessment = Assessment(
+        user_id=None,
+        framework="pci_dss",
+        environment_type=env,
+        status=AssessmentStatus.COMPLETED.value,
+        scope_result=data.scope_result,
+        anonymous_id=client_key,
+        guest_email=data.guest_email.strip().lower()[:255] if data.guest_email else None,
+    )
+    db.add(assessment)
+    await db.flush()
+    await db.refresh(assessment)
+    return SaqAssessmentSyncResponse(assessment_id=assessment.id)
+
 
 # Phase 6: Full question trees. Ecommerce: 35 questions (ids 1-35); POS: 35 (ids 10-44)
 ECOMMERCE_QUESTIONS = [

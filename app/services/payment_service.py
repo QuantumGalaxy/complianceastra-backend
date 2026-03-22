@@ -49,3 +49,44 @@ class PaymentService:
             "checkout_url": session.url,
             "session_id": session.id,
         }
+
+    @staticmethod
+    async def create_guest_checkout_session(
+        assessment_id: int,
+        client_session_id: str,
+        customer_email: str,
+        success_url: str,
+        cancel_url: str,
+    ) -> dict:
+        """
+        Guest checkout — no logged-in user. Email + assessment_id in metadata for webhook.
+        success_url should include {CHECKOUT_SESSION_ID} query param placeholder for Stripe.
+        """
+        if not PaymentService.is_configured():
+            raise ValueError("Stripe is not configured")
+        import stripe
+
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+        meta = {
+            "assessment_id": str(assessment_id),
+            "client_session_id": (client_session_id or "")[:500],
+            "customer_email": (customer_email or "").strip().lower()[:500],
+        }
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=[
+                {
+                    "price": settings.STRIPE_PRICE_ID_REPORT,
+                    "quantity": 1,
+                }
+            ],
+            mode="payment",
+            success_url=success_url,
+            cancel_url=cancel_url,
+            customer_email=customer_email.strip().lower(),
+            metadata=meta,
+        )
+        return {
+            "checkout_url": session.url,
+            "session_id": session.id,
+        }

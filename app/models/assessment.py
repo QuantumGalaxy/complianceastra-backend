@@ -31,6 +31,7 @@ class Assessment(Base):
     current_question_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     scope_result: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # Computed scope summary
     anonymous_id: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
+    guest_email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     claimed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

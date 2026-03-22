@@ -389,6 +389,26 @@ class ReportService:
         return report
 
     @staticmethod
+    async def create_pending_guest(
+        db,
+        assessment_id: int,
+        stripe_payment_id: str | None = None,
+    ):
+        """Report before payment completes — user_id is set after Stripe webhook."""
+        from app.models.report import Report
+
+        report = Report(
+            user_id=None,
+            assessment_id=assessment_id,
+            stripe_payment_id=stripe_payment_id,
+            status="pending",
+        )
+        db.add(report)
+        await db.flush()
+        await db.refresh(report)
+        return report
+
+    @staticmethod
     def generate_pdf_sync(report_id: int, assessment_id: int, environment_type: str, scope_result: dict) -> str | None:
         """Generate Phase 7 professional PDF report."""
         return generate_pdf(

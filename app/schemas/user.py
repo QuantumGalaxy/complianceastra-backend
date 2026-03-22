@@ -30,3 +30,9 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class PostCheckoutRequest(BaseModel):
+    """Exchange Stripe Checkout session id for JWT after payment redirect."""
+
+    session_id: str = Field(..., min_length=5, description="Stripe Checkout Session id (cs_...)")

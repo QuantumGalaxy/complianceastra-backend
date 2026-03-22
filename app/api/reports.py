@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, delete
 import os
 
 from app.core.database import get_db
@@ -12,9 +12,11 @@ from app.models.user import User
 from app.models.report import Report
 from app.models.assessment import Assessment
 from app.schemas.report import CheckoutRequest, CheckoutResponse
+from app.schemas.saq_assessment import GuestCheckoutRequest, GuestCheckoutResponse
 from app.services.payment_service import PaymentService
 from app.services.report_service import ReportService
 from app.services.assessment_service import AssessmentService
+from app.services.checkout_completion import fulfill_paid_checkout_session
 from app.core.exceptions import ValidationError
 
 router = APIRouter()
@@ -76,6 +78,70 @@ async def create_checkout(
         503,
         "Payment system not configured. Set STRIPE_SECRET_KEY and STRIPE_PRICE_ID_REPORT in .env, or STRIPE_DEV_BYPASS=true for development.",
     )
+
+
+@router.post("/checkout-guest", response_model=GuestCheckoutResponse)
+async def create_checkout_guest(
+    data: GuestCheckoutRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Guest checkout for SAQ wizard — no login required.
+    Sync assessment first via POST /api/assessments/saq-sync.
+    """
+    result = await db.execute(select(Assessment).where(Assessment.id == data.assessment_id))
+    assessment = result.scalar_one_or_none()
+    if not assessment or assessment.anonymous_id != data.client_session_id.strip()[:64]:
+        raise HTTPException(400, "Invalid assessment or session — refresh and try again")
+    if not assessment.scope_result:
+        raise HTTPException(400, "Assessment has no results yet")
+    email = str(data.email).strip().lower()
+    assessment.guest_email = email
+
+    await db.execute(
+        delete(Report).where(Report.assessment_id == assessment.id, Report.user_id.is_(None))
+    )
+    await db.flush()
+
+    success_url = (
+        f"{settings.FRONTEND_URL}/dashboard?report=success&session_id={{CHECKOUT_SESSION_ID}}"
+    )
+    cancel_url = f"{settings.FRONTEND_URL}/assessments/session/{data.client_session_id}"
+
+    if settings.STRIPE_DEV_BYPASS and not PaymentService.is_configured():
+        await ReportService.create_pending_guest(db, assessment.id, stripe_payment_id="dev_bypass")
+        await db.flush()
+        out = await fulfill_paid_checkout_session(
+            db,
+            "dev_bypass",
+            dev_bypass=True,
+            dev_email=email,
+            dev_assessment_id=assessment.id,
+        )
+        if not out.get("ok") or not out.get("access_token"):
+            raise HTTPException(500, "Dev checkout fulfillment failed")
+        return GuestCheckoutResponse(
+            checkout_url=f"{settings.FRONTEND_URL}/dashboard?report=success",
+            session_id="dev_bypass",
+            access_token=out["access_token"],
+        )
+
+    if not PaymentService.is_configured():
+        raise HTTPException(
+            503,
+            "Payment not configured. Set Stripe keys or STRIPE_DEV_BYPASS=true for development.",
+        )
+
+    co = await PaymentService.create_guest_checkout_session(
+        assessment_id=assessment.id,
+        client_session_id=data.client_session_id,
+        customer_email=email,
+        success_url=success_url,
+        cancel_url=cancel_url,
+    )
+    await ReportService.create_pending_guest(db, assessment.id, stripe_payment_id=co["session_id"])
+    await db.flush()
+    return GuestCheckoutResponse(checkout_url=co["checkout_url"], session_id=co["session_id"])
 
 
 @router.get("/{report_id}/download")

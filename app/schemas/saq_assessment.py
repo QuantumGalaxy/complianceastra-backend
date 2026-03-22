@@ -26,5 +26,7 @@ class GuestCheckoutResponse(BaseModel):
     session_id: str
     """JWT returned only when STRIPE_DEV_BYPASS simulates payment (local dev)."""
     access_token: str | None = None
+    needs_password_setup: bool = False
+    setup_token: str | None = None
 
 

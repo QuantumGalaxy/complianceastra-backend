@@ -41,5 +41,4 @@ async def stripe_webhook(
         out = await fulfill_paid_checkout_session(db, session_id, session_data=session)
         if not out.get("ok"):
             logger.warning("Webhook fulfillment: %s for session %s", out.get("error"), session_id[:16])
-        # Optional: send welcome email with temp password — see email_service
     return {"received": True}

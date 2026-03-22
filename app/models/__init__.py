@@ -1,4 +1,5 @@
 from app.models.user import User
+from app.models.password_reset_token import PasswordResetToken
 from app.models.organization import Organization
 from app.models.rule_set import RuleSet
 from app.models.assessment import Assessment, AssessmentAnswer

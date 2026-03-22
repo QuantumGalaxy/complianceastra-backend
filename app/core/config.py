@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:3000"
     REPORTS_DIR: str = "reports"
 
+    # Email (Resend — https://resend.com). Required for guest checkout password + report by mail.
+    RESEND_API_KEY: str = ""
+    """From address must use a domain verified in Resend (or onboarding@resend.dev for testing)."""
+    MAIL_FROM: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = True

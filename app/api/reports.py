@@ -104,7 +104,7 @@ async def create_checkout_guest(
     await db.flush()
 
     success_url = (
-        f"{settings.FRONTEND_URL}/dashboard?report=success&session_id={{CHECKOUT_SESSION_ID}}"
+        f"{settings.FRONTEND_URL}/auth/complete?report=success&session_id={{CHECKOUT_SESSION_ID}}"
     )
     cancel_url = f"{settings.FRONTEND_URL}/assessments/session/{data.client_session_id}"
 
@@ -121,9 +121,11 @@ async def create_checkout_guest(
         if not out.get("ok") or not out.get("access_token"):
             raise HTTPException(500, "Dev checkout fulfillment failed")
         return GuestCheckoutResponse(
-            checkout_url=f"{settings.FRONTEND_URL}/dashboard?report=success",
+            checkout_url=f"{settings.FRONTEND_URL}/auth/complete?report=success&session_id=dev_bypass",
             session_id="dev_bypass",
-            access_token=out["access_token"],
+            access_token=out.get("access_token"),
+            needs_password_setup=bool(out.get("needs_password_setup")),
+            setup_token=out.get("setup_token"),
         )
 
     if not PaymentService.is_configured():

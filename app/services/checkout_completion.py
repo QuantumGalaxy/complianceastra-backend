@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_password_hash, create_access_token
 from app.core.config import get_settings
+from app.core.password_setup import create_password_setup_token
 from app.models.assessment import Assessment
 from app.models.report import Report
 from app.models.user import User
@@ -18,6 +19,34 @@ from app.services.report_service import ReportService
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
+
+
+async def _maybe_send_checkout_welcome_email(
+    user_email: str,
+    *,
+    setup_token: str,
+    report_file_path: str | None,
+    is_new_account: bool,
+) -> None:
+    """Email once for brand-new accounts (avoids duplicate webhook + post-checkout)."""
+    if not is_new_account:
+        return
+    try:
+        from app.services.email_service import send_guest_checkout_email
+
+        dash = settings.FRONTEND_URL.rstrip("/") + "/dashboard"
+        login_url = settings.FRONTEND_URL.rstrip("/") + "/login"
+        set_password_url = settings.FRONTEND_URL.rstrip("/") + "/auth/set-password"
+        await send_guest_checkout_email(
+            user_email,
+            setup_token=setup_token,
+            dashboard_url=dash,
+            login_url=login_url,
+            set_password_base_url=set_password_url,
+            report_path=report_file_path,
+        )
+    except Exception:
+        logger.exception("Checkout welcome email failed (non-fatal) for %s", user_email[:3] + "***")
 
 
 def _get_session_email(session: dict[str, Any]) -> str | None:
@@ -32,26 +61,48 @@ def _get_session_email(session: dict[str, Any]) -> str | None:
 async def get_or_create_user_for_guest(
     db: AsyncSession,
     email: str,
-) -> tuple[User, str | None]:
+) -> tuple[User, bool]:
     """
-    Return (user, plain_password_or_none).
-    If user is new, creates account with random password (returned once for email body).
+    Return (user, created).
+    New accounts use a random password hash and password_ready=False until they set a password.
     """
     email_norm = email.strip().lower()
     result = await db.execute(select(User).where(User.email == email_norm))
     existing = result.scalar_one_or_none()
     if existing:
-        return existing, None
-    plain = secrets.token_urlsafe(14)
+        return existing, False
     user = User(
         email=email_norm,
-        hashed_password=get_password_hash(plain),
+        hashed_password=get_password_hash(secrets.token_urlsafe(48)),
         full_name=None,
+        password_ready=False,
     )
     db.add(user)
     await db.flush()
     await db.refresh(user)
-    return user, plain
+    return user, True
+
+
+def _success_payload(
+    *,
+    user: User,
+    report: Report,
+    stripe_session_id: str,
+    created: bool,
+) -> dict[str, Any]:
+    """Build fulfillment result: JWT only when password_ready after setup or existing user."""
+    needs_setup = not user.password_ready
+    setup_token = create_password_setup_token(user.id, stripe_session_id) if needs_setup else None
+    access_token = create_access_token({"sub": str(user.id)}) if not needs_setup else None
+    return {
+        "ok": True,
+        "user_id": user.id,
+        "report_id": report.id,
+        "access_token": access_token,
+        "needs_password_setup": needs_setup,
+        "setup_token": setup_token,
+        "is_new_account": created,
+    }
 
 
 async def fulfill_paid_checkout_session(
@@ -65,7 +116,7 @@ async def fulfill_paid_checkout_session(
 ) -> dict[str, Any]:
     """
     Idempotent: assign user + assessment + generate PDF for a paid session.
-    Returns { ok, user_id, report_id, access_token?, new_password_plain? }.
+    New guest accounts must set a password via setup_token (JWT); no session JWT until then.
     """
     if dev_bypass and settings.STRIPE_DEV_BYPASS:
         if not dev_email or not dev_assessment_id:
@@ -74,7 +125,7 @@ async def fulfill_paid_checkout_session(
         assessment = result.scalar_one_or_none()
         if not assessment or not assessment.scope_result:
             return {"ok": False, "error": "assessment_not_found"}
-        user, plain = await get_or_create_user_for_guest(db, dev_email)
+        user, created = await get_or_create_user_for_guest(db, dev_email)
         assessment.user_id = user.id
         if assessment.guest_email:
             assessment.guest_email = None
@@ -114,14 +165,16 @@ async def fulfill_paid_checkout_session(
         else:
             report.status = "failed"
         await db.flush()
-        token = create_access_token({"sub": str(user.id)})
-        return {
-            "ok": True,
-            "user_id": user.id,
-            "report_id": report.id,
-            "access_token": token,
-            "new_password_plain": plain,
-        }
+        sid = "dev_bypass"
+        out = _success_payload(user=user, report=report, stripe_session_id=sid, created=created)
+        if out.get("setup_token"):
+            await _maybe_send_checkout_welcome_email(
+                dev_email,
+                setup_token=out["setup_token"],
+                report_file_path=report.file_path,
+                is_new_account=created,
+            )
+        return out
 
     if session_data is not None:
         session = session_data
@@ -179,21 +232,22 @@ async def fulfill_paid_checkout_session(
         await db.flush()
         return {"ok": False, "error": "assessment_invalid"}
 
-    user, plain = await get_or_create_user_for_guest(db, email)
+    user, created = await get_or_create_user_for_guest(db, email)
     report.user_id = user.id
     assessment.user_id = user.id
     assessment.guest_email = None
     assessment.status = "completed"
 
     if report.status == "generated" and report.file_path:
-        token = create_access_token({"sub": str(user.id)})
-        return {
-            "ok": True,
-            "user_id": user.id,
-            "report_id": report.id,
-            "access_token": token,
-            "new_password_plain": plain,
-        }
+        out = _success_payload(user=user, report=report, stripe_session_id=session_id, created=created)
+        if out.get("setup_token"):
+            await _maybe_send_checkout_welcome_email(
+                email,
+                setup_token=out["setup_token"],
+                report_file_path=report.file_path,
+                is_new_account=created,
+            )
+        return out
 
     report.status = "generating"
     await db.flush()
@@ -212,11 +266,12 @@ async def fulfill_paid_checkout_session(
         logger.error("PDF generation failed for report %s", report.id)
     await db.flush()
 
-    token = create_access_token({"sub": str(user.id)})
-    return {
-        "ok": True,
-        "user_id": user.id,
-        "report_id": report.id,
-        "access_token": token,
-        "new_password_plain": plain,
-    }
+    out = _success_payload(user=user, report=report, stripe_session_id=session_id, created=created)
+    if out.get("setup_token"):
+        await _maybe_send_checkout_welcome_email(
+            email,
+            setup_token=out["setup_token"],
+            report_file_path=report.file_path,
+            is_new_account=created,
+        )
+    return out

@@ -96,22 +96,23 @@ async def send_existing_user_receipt_email(
     report_path: str | None,
     app_name: str | None = None,
 ) -> bool:
-    """Optional receipt for returning customers (no password setup)."""
+    """Payment confirmation for returning customers (already have a password)."""
     settings = get_settings()
     api_key = (settings.RESEND_API_KEY or "").strip()
     if not api_key:
+        logger.warning("RESEND_API_KEY not set; payment receipt email skipped")
         return False
     name = app_name or settings.APP_NAME
     from_addr = (settings.MAIL_FROM or "").strip() or f"{name} <onboarding@resend.dev>"
     html = (
-        f"<p>Thanks for your purchase from {name}.</p>"
-        f'<p><a href="{dashboard_url}">Open your dashboard</a> — '
-        f'<a href="{login_url}">Log in</a> with your existing password.</p>'
+        f"<p><strong>Payment confirmed.</strong> Thanks for your purchase from {name}.</p>"
+        f'<p><a href="{dashboard_url}">Open your dashboard</a> to view and download your report — '
+        f'<a href="{login_url}">log in</a> with your existing password.</p>'
     )
     payload: dict = {
         "from": from_addr,
         "to": [to_email],
-        "subject": f"Your {name} report is ready",
+        "subject": f"Payment confirmed — your {name} report",
         "html": html,
     }
     if report_path and Path(report_path).is_file():

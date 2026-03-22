@@ -16,5 +16,7 @@ class Report(Base):
     file_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending, generated, failed
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    # Set after welcome or payment receipt email (dedupes Stripe webhook + post-checkout).
+    checkout_email_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     user = relationship("User", back_populates="reports")

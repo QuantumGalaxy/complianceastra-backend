@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import secrets
+from datetime import datetime
 from typing import Any
 
 import stripe
@@ -21,32 +22,60 @@ settings = get_settings()
 logger = logging.getLogger(__name__)
 
 
-async def _maybe_send_checkout_welcome_email(
+async def _send_post_checkout_emails(
+    db: AsyncSession,
     user_email: str,
+    user: User,
+    report: Report,
     *,
-    setup_token: str,
-    report_file_path: str | None,
-    is_new_account: bool,
+    created: bool,
+    stripe_session_id: str,
 ) -> None:
-    """Email once for brand-new accounts (avoids duplicate webhook + post-checkout)."""
-    if not is_new_account:
+    """
+    After a generated report:
+    - Account still needs password setup: welcome + PDF + set-password link.
+    - Returning customer (password ready): payment confirmation + PDF.
+    Dedupes Stripe webhook + post-checkout via report.checkout_email_sent_at.
+    Same for Stripe and dev bypass.
+    """
+    if report.status != "generated" or not report.file_path:
         return
+    if report.checkout_email_sent_at:
+        return
+
+    needs_setup = not user.password_ready
+    setup_token = (
+        create_password_setup_token(user.id, stripe_session_id) if needs_setup else None
+    )
     try:
-        from app.services.email_service import send_guest_checkout_email
+        from app.services.email_service import send_guest_checkout_email, send_existing_user_receipt_email
 
         dash = settings.FRONTEND_URL.rstrip("/") + "/dashboard"
         login_url = settings.FRONTEND_URL.rstrip("/") + "/login"
         set_password_url = settings.FRONTEND_URL.rstrip("/") + "/auth/set-password"
-        await send_guest_checkout_email(
-            user_email,
-            setup_token=setup_token,
-            dashboard_url=dash,
-            login_url=login_url,
-            set_password_base_url=set_password_url,
-            report_path=report_file_path,
-        )
+
+        sent = False
+        if needs_setup and setup_token:
+            sent = await send_guest_checkout_email(
+                user_email,
+                setup_token=setup_token,
+                dashboard_url=dash,
+                login_url=login_url,
+                set_password_base_url=set_password_url,
+                report_path=report.file_path,
+            )
+        else:
+            sent = await send_existing_user_receipt_email(
+                user_email,
+                dashboard_url=dash,
+                login_url=login_url,
+                report_path=report.file_path,
+            )
+        if sent:
+            report.checkout_email_sent_at = datetime.utcnow()
+            await db.flush()
     except Exception:
-        logger.exception("Checkout welcome email failed (non-fatal) for %s", user_email[:3] + "***")
+        logger.exception("Post-checkout email failed (non-fatal) for %s", user_email[:3] + "***")
 
 
 def _get_session_email(session: dict[str, Any]) -> str | None:
@@ -167,13 +196,14 @@ async def fulfill_paid_checkout_session(
         await db.flush()
         sid = "dev_bypass"
         out = _success_payload(user=user, report=report, stripe_session_id=sid, created=created)
-        if out.get("setup_token"):
-            await _maybe_send_checkout_welcome_email(
-                dev_email,
-                setup_token=out["setup_token"],
-                report_file_path=report.file_path,
-                is_new_account=created,
-            )
+        await _send_post_checkout_emails(
+            db,
+            dev_email,
+            user,
+            report,
+            created=created,
+            stripe_session_id=sid,
+        )
         return out
 
     if session_data is not None:
@@ -240,13 +270,14 @@ async def fulfill_paid_checkout_session(
 
     if report.status == "generated" and report.file_path:
         out = _success_payload(user=user, report=report, stripe_session_id=session_id, created=created)
-        if out.get("setup_token"):
-            await _maybe_send_checkout_welcome_email(
-                email,
-                setup_token=out["setup_token"],
-                report_file_path=report.file_path,
-                is_new_account=created,
-            )
+        await _send_post_checkout_emails(
+            db,
+            email,
+            user,
+            report,
+            created=created,
+            stripe_session_id=session_id,
+        )
         return out
 
     report.status = "generating"
@@ -267,11 +298,12 @@ async def fulfill_paid_checkout_session(
     await db.flush()
 
     out = _success_payload(user=user, report=report, stripe_session_id=session_id, created=created)
-    if out.get("setup_token"):
-        await _maybe_send_checkout_welcome_email(
-            email,
-            setup_token=out["setup_token"],
-            report_file_path=report.file_path,
-            is_new_account=created,
-        )
+    await _send_post_checkout_emails(
+        db,
+        email,
+        user,
+        report,
+        created=created,
+        stripe_session_id=session_id,
+    )
     return out
